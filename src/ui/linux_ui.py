@@ -1,6 +1,6 @@
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gio
+from gi.repository import Gtk, Gio, Pango
 import os
 import logging
 
@@ -13,6 +13,7 @@ class LinuxUI(Gtk.Window):
         Gtk.Window.__init__(self, title="Matx Editor")
         self.editor = editor
         self.set_default_size(500, 400)
+        self.set_size_request(500, 400)
 
         logger.debug("Setting up main layout")
         vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
@@ -48,6 +49,7 @@ class LinuxUI(Gtk.Window):
 
         logger.debug("Setting up notebook")
         self.notebook = Gtk.Notebook()
+        self.notebook.set_scrollable(True)
         vbox.pack_start(self.notebook, True, True, 0)
 
     def add_tab(self, file_path, content=""):
@@ -61,13 +63,21 @@ class LinuxUI(Gtk.Window):
         scrolled_window.add(textview)
         
         tab_label = Gtk.Label(label=os.path.basename(file_path))
+        tab_label.set_width_chars(15)  # Set a fixed width for the label
+        tab_label.set_ellipsize(Pango.EllipsizeMode.END)  # Ellipsize text if it's too long
+        
         new_page_index = self.notebook.append_page(scrolled_window, tab_label)
         self.notebook.set_current_page(new_page_index)
-        self.show_all()
         
+        # Set tab properties
+        self.notebook.set_tab_reorderable(scrolled_window, True)
+        self.notebook.child_set_property(scrolled_window, "tab-expand", False)  # Changed to False
+        self.notebook.child_set_property(scrolled_window, "tab-fill", False)  # Changed to False
+        scrolled_window.file_path = file_path
+        
+        self.show_all()
+
         return textbuffer, new_page_index
-
-
 
     def on_new_clicked(self, widget):
         logger.debug("New button clicked")
@@ -120,3 +130,4 @@ if __name__ == "__main__":
     logger.debug("Starting application directly from linux_ui.py")
     ui = LinuxUI(None)
     ui.run()
+

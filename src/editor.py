@@ -4,6 +4,9 @@ from pygments import highlight
 from pygments.lexers import get_lexer_for_filename
 from pygments.formatters import HtmlFormatter
 from utils.file_operations import get_file_path, read_file, write_file
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk
 
 if sys.platform.startswith('win'):
     from ui.windows_ui import WindowsUI
@@ -46,6 +49,11 @@ class Editor:
                 end_iter = textbuffer.get_end_iter()
                 content = textbuffer.get_text(start_iter, end_iter, True)
                 write_file(file_path, content)
+                
+                # Update the tab label with the new file name
+                tab_label = Gtk.Label(label=os.path.basename(file_path))
+                self.ui.notebook.set_tab_label(self.ui.notebook.get_nth_page(current_page), tab_label)
+
 
     def apply_syntax_highlighting(self, file_path, textbuffer):
         try:
