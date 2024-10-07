@@ -69,6 +69,8 @@ class Editor:
                 content = file.read()
             textbuffer.set_text(content)
 
+    def exit(self):
+        Gtk.main_quit()
 
     def run(self):
         self.ui.run()

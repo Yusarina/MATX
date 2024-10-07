@@ -71,6 +71,8 @@ class LinuxUI(Gtk.Window):
         hbox = Gtk.Box(spacing=6)
         vbox.pack_start(hbox, False, False, 0)
 
+        self.connect("delete-event", self.on_delete_event)
+
         new_button = Gtk.Button(label="New")
         new_button.connect("clicked", self.on_new_clicked)
         hbox.pack_start(new_button, False, False, 0)
@@ -187,7 +189,7 @@ class LinuxUI(Gtk.Window):
 
     def on_exit_clicked(self, widget):
         logger.debug("Exit button clicked")
-        self.quit()
+        Gtk.main_quit()
 
     def update_content(self, content):
         logger.debug("Updating content")
@@ -196,6 +198,11 @@ class LinuxUI(Gtk.Window):
             textview = self.notebook.get_nth_page(current_page).get_child()
             textbuffer = textview.get_buffer()
             textbuffer.set_text(content)
+
+    def on_delete_event(self, widget, event):
+        logger.debug("Window close button (X) clicked")
+        Gtk.main_quit()
+        return False
 
     def run(self):
         logger.debug("Running LinuxUI")
