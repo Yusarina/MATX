@@ -1,0 +1,2 @@
+pygobject==3.42.2
+pygments==2.15.1
