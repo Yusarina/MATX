@@ -6,7 +6,8 @@ from pygments.formatters import HtmlFormatter
 from utils.file_operations import get_file_path, read_file, write_file
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk
+gi.require_version('GtkSource', '3.0')
+from gi.repository import Gtk, GtkSource
 
 if sys.platform.startswith('win'):
     from ui.windows_ui import WindowsUI
@@ -34,8 +35,8 @@ class Editor:
         file_path = get_file_path('open')
         if file_path:
             content = read_file(file_path)
-            new_tab, new_page_index = self.ui.add_tab(file_path, content)
-            self.apply_syntax_highlighting(file_path, new_tab)
+            textbuffer, new_page_index = self.ui.add_tab(file_path, content)
+            self.apply_syntax_highlighting(file_path, textbuffer)
             self.ui.notebook.set_current_page(new_page_index)
 
     def save_file(self):
@@ -54,20 +55,17 @@ class Editor:
                 tab_label = Gtk.Label(label=os.path.basename(file_path))
                 self.ui.notebook.set_tab_label(self.ui.notebook.get_nth_page(current_page), tab_label)
 
-
-    def apply_syntax_highlighting(self, file_path, textbuffer):
-        try:
-            lexer = get_lexer_for_filename(file_path)
-            formatter = HtmlFormatter(style='monokai')
-            with open(file_path, 'r') as file:
-                content = file.read()
-            highlighted_text = highlight(content, lexer, formatter)
-            textbuffer.set_text(highlighted_text)
-        except:
-            # If highlighting fails, just set the plain text
-            with open(file_path, 'r') as file:
-                content = file.read()
-            textbuffer.set_text(content)
+    def apply_syntax_highlighting(self, file_path, buffer):
+        language_manager = GtkSource.LanguageManager()
+        language = language_manager.guess_language(file_path, None)
+        
+        buffer.set_language(language)
+        buffer.set_highlight_syntax(True)
+        
+        with open(file_path, 'r') as file:
+            content = file.read()
+            
+        buffer.set_text(content)
 
     def exit(self):
         Gtk.main_quit()

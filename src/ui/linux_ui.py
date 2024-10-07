@@ -1,6 +1,7 @@
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gio, Pango
+gi.require_version('GtkSource', '3.0')
+from gi.repository import Gtk, Gdk, Gio, Pango, GtkSource
 import os
 import logging
 
@@ -57,57 +58,91 @@ class UndoRedoStack:
 class LinuxUI(Gtk.Window):
     def __init__(self, editor):
         logger.debug("Initializing LinuxUI")
-        Gtk.Window.__init__(self, title="Matx Editor")
+        Gtk.Window.__init__(self, title="MATX Editor")
         self.editor = editor
-        self.set_default_size(500, 400)
-        self.set_size_request(500, 400)
+        self.set_default_size(800, 600)
         self.ignore_text_change = False
 
-        logger.debug("Setting up main layout")
+        # Apply a CSS provider for custom styling
+        css_provider = Gtk.CssProvider()
+        css_provider.load_from_data(b"""
+            button { padding: 5px 10px; }
+            textview { font-family: 'Monospace'; font-size: 12px; }
+        """)
+        Gtk.StyleContext.add_provider_for_screen(
+            Gdk.Screen.get_default(),
+            css_provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
+
+        # Create a header bar
+        header_bar = Gtk.HeaderBar()
+        header_bar.set_show_close_button(True)
+        header_bar.props.title = "MATX Editor"
+        self.set_titlebar(header_bar)
+
+        # Add buttons to the header bar
+        new_button = Gtk.Button()
+        new_button.set_tooltip_text("New File")
+        new_button.set_image(Gtk.Image.new_from_icon_name("document-new", Gtk.IconSize.LARGE_TOOLBAR))
+        new_button.connect("clicked", self.on_new_clicked)
+        header_bar.pack_start(new_button)
+
+        open_button = Gtk.Button()
+        open_button.set_tooltip_text("Open File")
+        open_button.set_image(Gtk.Image.new_from_icon_name("document-open", Gtk.IconSize.LARGE_TOOLBAR))
+        open_button.connect("clicked", self.on_open_clicked)
+        header_bar.pack_start(open_button)
+
+        save_button = Gtk.Button()
+        save_button.set_tooltip_text("Save File")
+        save_button.set_image(Gtk.Image.new_from_icon_name("document-save", Gtk.IconSize.LARGE_TOOLBAR))
+        save_button.connect("clicked", self.on_save_clicked)
+        header_bar.pack_start(save_button)
+
+        undo_button = Gtk.Button()
+        undo_button.set_tooltip_text("Undo")
+        undo_button.set_image(Gtk.Image.new_from_icon_name("edit-undo", Gtk.IconSize.LARGE_TOOLBAR))
+        undo_button.connect("clicked", self.on_undo_clicked)
+        header_bar.pack_start(undo_button)
+
+        redo_button = Gtk.Button()
+        redo_button.set_tooltip_text("Redo")
+        redo_button.set_image(Gtk.Image.new_from_icon_name("edit-redo", Gtk.IconSize.LARGE_TOOLBAR))
+        redo_button.connect("clicked", self.on_redo_clicked)
+        header_bar.pack_start(redo_button)
+
+        # Main layout
         vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         self.add(vbox)
 
-        logger.debug("Adding buttons")
-        hbox = Gtk.Box(spacing=6)
-        vbox.pack_start(hbox, False, False, 0)
-
-        self.connect("delete-event", self.on_delete_event)
-
-        new_button = Gtk.Button(label="New")
-        new_button.connect("clicked", self.on_new_clicked)
-        hbox.pack_start(new_button, False, False, 0)
-
-        open_button = Gtk.Button(label="Open")
-        open_button.connect("clicked", self.on_open_clicked)
-        hbox.pack_start(open_button, False, False, 0)
-
-        save_button = Gtk.Button(label="Save")
-        save_button.connect("clicked", self.on_save_clicked)
-        hbox.pack_start(save_button, False, False, 0)
-
-        undo_button = Gtk.Button(label="Undo")
-        undo_button.connect("clicked", self.on_undo_clicked)
-        hbox.pack_start(undo_button, False, False, 0)
-
-        redo_button = Gtk.Button(label="Redo")
-        redo_button.connect("clicked", self.on_redo_clicked)
-        hbox.pack_start(redo_button, False, False, 0)
-
-        exit_button = Gtk.Button(label="Exit")
-        exit_button.connect("clicked", self.on_exit_clicked)
-        hbox.pack_start(exit_button, False, False, 0)
-
-        logger.debug("Setting up notebook")
+        # Notebook for tabs
         self.notebook = Gtk.Notebook()
         self.notebook.set_scrollable(True)
         vbox.pack_start(self.notebook, True, True, 0)
 
+        # Status bar
+        self.statusbar = Gtk.Statusbar()
+        vbox.pack_start(self.statusbar, False, False, 0)
+
+        self.connect("delete-event", self.on_delete_event)
+
     def add_tab(self, file_path, content=""):
         logger.debug(f"Adding new tab for {file_path}")
         scrolled_window = Gtk.ScrolledWindow()
-        textview = Gtk.TextView()
-        textview.set_editable(True)
-        textview.set_cursor_visible(True)
+        
+        # Use GtkSourceView instead of Gtk.TextView
+        textview = GtkSource.View()
+        textview.set_show_line_numbers(True)
+        textview.set_auto_indent(True)
+        textview.set_indent_on_tab(True)
+        textview.set_indent_width(4)
+        textview.set_insert_spaces_instead_of_tabs(True)
+        
+        # Add padding to adjust text positioning
+        textview.set_top_margin(10)
+        textview.set_left_margin(10)
+        
         textbuffer = textview.get_buffer()
         textbuffer.set_text(content)
         scrolled_window.add(textview)
@@ -186,10 +221,6 @@ class LinuxUI(Gtk.Window):
                 self.ignore_text_change = False
             else:
                 logger.debug("No redo performed")
-
-    def on_exit_clicked(self, widget):
-        logger.debug("Exit button clicked")
-        Gtk.main_quit()
 
     def update_content(self, content):
         logger.debug("Updating content")

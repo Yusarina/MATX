@@ -12,8 +12,20 @@ def get_file_path(action, initial_dir=None):
         "_Open" if action == 'open' else "_Save",
         "_Cancel"
     )
+    dialog.set_modal(True)
+    
     if initial_dir:
         dialog.set_current_folder(Gio.File.new_for_path(initial_dir))
+    
+    filter_text = Gtk.FileFilter()
+    filter_text.set_name("Text files")
+    filter_text.add_mime_type("text/plain")
+    dialog.add_filter(filter_text)
+    
+    filter_any = Gtk.FileFilter()
+    filter_any.set_name("Any files")
+    filter_any.add_pattern("*")
+    dialog.add_filter(filter_any)
     
     response = dialog.run()
     if response == Gtk.ResponseType.ACCEPT:
