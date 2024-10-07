@@ -7,6 +7,53 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+class UndoRedoStack:
+    def __init__(self):
+        self.undo_stack = []
+        self.redo_stack = []
+        self.current_text = ""
+        self.change_count = 0
+        self.max_stack_size = 64
+
+    def push(self, text):
+        if text != self.current_text:
+            self.change_count += 1
+            if self.change_count >= 5:
+                logger.debug(f"Pushing text: {text[:20]}...")
+                self.undo_stack.append(self.current_text)
+                if len(self.undo_stack) > self.max_stack_size:
+                    self.undo_stack.pop(0)
+                self.current_text = text
+                self.redo_stack.clear()
+                self.change_count = 0
+                logger.debug(f"Undo stack size: {len(self.undo_stack)}, Redo stack size: {len(self.redo_stack)}")
+
+    def undo(self):
+        if self.undo_stack:
+            logger.debug("Performing undo")
+            self.redo_stack.append(self.current_text)
+            if len(self.redo_stack) > self.max_stack_size:
+                self.redo_stack.pop(0)
+            self.current_text = self.undo_stack.pop()
+            self.change_count = 0
+            logger.debug(f"Undo stack size: {len(self.undo_stack)}, Redo stack size: {len(self.redo_stack)}")
+            return self.current_text
+        logger.debug("No undo available")
+        return None
+
+    def redo(self):
+        if self.redo_stack:
+            logger.debug("Performing redo")
+            self.undo_stack.append(self.current_text)
+            if len(self.undo_stack) > self.max_stack_size:
+                self.undo_stack.pop(0)
+            self.current_text = self.redo_stack.pop()
+            self.change_count = 0
+            logger.debug(f"Undo stack size: {len(self.undo_stack)}, Redo stack size: {len(self.redo_stack)}")
+            return self.current_text
+        logger.debug("No redo available")
+        return None
+
 class LinuxUI(Gtk.Window):
     def __init__(self, editor):
         logger.debug("Initializing LinuxUI")
@@ -14,6 +61,7 @@ class LinuxUI(Gtk.Window):
         self.editor = editor
         self.set_default_size(500, 400)
         self.set_size_request(500, 400)
+        self.ignore_text_change = False
 
         logger.debug("Setting up main layout")
         vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
@@ -62,22 +110,36 @@ class LinuxUI(Gtk.Window):
         textbuffer.set_text(content)
         scrolled_window.add(textview)
         
+        undo_redo_stack = UndoRedoStack()
+        undo_redo_stack.push(content)
+        textview.undo_redo_stack = undo_redo_stack
+
+        textbuffer.connect("changed", self.on_text_changed, textview)
+        
         tab_label = Gtk.Label(label=os.path.basename(file_path))
-        tab_label.set_width_chars(15)  # Set a fixed width for the label
-        tab_label.set_ellipsize(Pango.EllipsizeMode.END)  # Ellipsize text if it's too long
+        tab_label.set_width_chars(15)
+        tab_label.set_ellipsize(Pango.EllipsizeMode.END)
         
         new_page_index = self.notebook.append_page(scrolled_window, tab_label)
         self.notebook.set_current_page(new_page_index)
         
-        # Set tab properties
         self.notebook.set_tab_reorderable(scrolled_window, True)
-        self.notebook.child_set_property(scrolled_window, "tab-expand", False)  # Changed to False
-        self.notebook.child_set_property(scrolled_window, "tab-fill", False)  # Changed to False
+        self.notebook.child_set_property(scrolled_window, "tab-expand", False)
+        self.notebook.child_set_property(scrolled_window, "tab-fill", False)
         scrolled_window.file_path = file_path
         
         self.show_all()
 
         return textbuffer, new_page_index
+
+    def on_text_changed(self, textbuffer, textview):
+        if self.ignore_text_change:
+            return
+        start_iter = textbuffer.get_start_iter()
+        end_iter = textbuffer.get_end_iter()
+        text = textbuffer.get_text(start_iter, end_iter, True)
+        logger.debug(f"Text changed: {text[:20]}...")
+        textview.undo_redo_stack.push(text)
 
     def on_new_clicked(self, widget):
         logger.debug("New button clicked")
@@ -97,8 +159,15 @@ class LinuxUI(Gtk.Window):
         if current_page != -1:
             textview = self.notebook.get_nth_page(current_page).get_child()
             textbuffer = textview.get_buffer()
-            if textbuffer.can_undo():
-                textbuffer.undo()
+            text = textview.undo_redo_stack.undo()
+            if text is not None:
+                logger.debug(f"Undoing to: {text[:20]}...")
+                self.ignore_text_change = True
+                textbuffer.set_text(text)
+                textbuffer.place_cursor(textbuffer.get_end_iter())
+                self.ignore_text_change = False
+            else:
+                logger.debug("No undo performed")
 
     def on_redo_clicked(self, widget):
         logger.debug("Redo button clicked")
@@ -106,8 +175,15 @@ class LinuxUI(Gtk.Window):
         if current_page != -1:
             textview = self.notebook.get_nth_page(current_page).get_child()
             textbuffer = textview.get_buffer()
-            if textbuffer.can_redo():
-                textbuffer.redo()
+            text = textview.undo_redo_stack.redo()
+            if text is not None:
+                logger.debug(f"Redoing to: {text[:20]}...")
+                self.ignore_text_change = True
+                textbuffer.set_text(text)
+                textbuffer.place_cursor(textbuffer.get_end_iter())
+                self.ignore_text_change = False
+            else:
+                logger.debug("No redo performed")
 
     def on_exit_clicked(self, widget):
         logger.debug("Exit button clicked")
@@ -130,4 +206,3 @@ if __name__ == "__main__":
     logger.debug("Starting application directly from linux_ui.py")
     ui = LinuxUI(None)
     ui.run()
-
