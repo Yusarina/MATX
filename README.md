@@ -9,17 +9,32 @@ A cross-platform text editor implemented in Python, supporting both Windows and 
 - Native UI for Windows and Linux
 - Syntax highlighting
 - Multiple tabs support
+- Undo and Redo functionality
 
 ## Requirements
 - Python 3.8+
 - GTK 3.0
 - PyGObject
 - Pygments
+- GtkSourceView 3.0
 
-## Installation
+## Linux Installation
 1. Clone the repository
 2. Install the required packages:
 - pip install -r requirements.txt
+3. Install system dependencies:
+   - For Ubuntu/Debian:
+     ```bash
+     sudo apt-get install python3-gi python3-gi-cairo gir1.2-gtk-3.0 gir1.2-gtksource-3.0
+     ```
+   - For Arch Linux:
+     ```bash
+     sudo pacman -S python-gobject gtk3 gtksourceview3
+     ```
+   - For other distributions, please refer to your package manager
+
+## Windows Installation
+Coming Soon
 
 ## Usage
 Run `python src/main.py` from the project root directory.
