@@ -1,6 +1,6 @@
 # MATX Text Editor
 
-A cross-platform text editor implemented in Python, supporting both Windows and Linux.
+A cross-platform text editor implemented in Python, supporting both Windows and Linux. This is in very early development is mainly a learning expiereince for me. 
 
 ## Features
 - Create new files
@@ -22,10 +22,10 @@ A cross-platform text editor implemented in Python, supporting both Windows and 
 ### For both Windows and Linux:
 
 1. Clone the repository:
--git clone https://github.com/yourusername/matx-text-editor.git
--cd matx-text-editor
-2. Install the required packages:
-- pip install -r requirements.txt
+   - `git clone https://github.com/yourusername/matx-text-editor.git`
+   - `cd matx-text-editor`
+3. Install the required packages:
+   - `pip install -r requirements.txt`
 
 ## Usage
 Run `python src/main.py` from the project root directory.
