@@ -1,6 +1,6 @@
 # MATX Text Editor
 
-A cross-platform text editor implemented in Python, supporting both Windows and Linux.
+A cross-platform text editor implemented in Python, supporting both Windows and Linux, very early development, you shouldn't really use it unless you want to help make this better!
 
 ## Features
 - Create new files
