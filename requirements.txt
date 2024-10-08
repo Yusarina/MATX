@@ -1,2 +1,2 @@
-pygobject==3.42.2
+wxPython==4.2.0
 pygments==2.15.1
