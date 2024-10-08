@@ -1,8 +1,9 @@
 # MATX Text Editor
 
-A cross-platform text editor implemented in Python, supporting both Windows and Linux, very early development, you shouldn't really use it unless you want to help make this better!
+A cross-platform text editor implemented in Python, supporting both Windows and Linux. This project is in early development, ideal for those who want to contribute and improve it!
 
 ## Features
+
 - Create new files
 - Open existing files
 - Save files
@@ -12,13 +13,22 @@ A cross-platform text editor implemented in Python, supporting both Windows and 
 - Undo and Redo functionality
 
 ## Requirements
+
+### Common Requirements
 - Python 3.8+
+- Pygments
+
+### Linux Requirements
 - GTK 3.0
 - PyGObject
-- Pygments
 - GtkSourceView 3.0
 
-## Linux Installation
+### Windows Requirements
+- pywin32
+
+## Installation
+
+### Linux Installation
 1. Clone the repository
 2. Install the required packages:
 - pip install -r requirements.txt
@@ -34,7 +44,13 @@ A cross-platform text editor implemented in Python, supporting both Windows and 
    - For other distributions, please refer to your package manager
 
 ## Windows Installation
-Coming Soon
+1. Clone the repository
+2. Install Python 3.8+ from the official Python website (https://www.python.org/downloads/)
+3. Open a command prompt and navigate to the project directory
+4. Install the required packages:
+   ```bash
+   pip install -r requirements.txt
+5. pip install pywin32
 
 ## Usage
 Run `python src/main.py` from the project root directory.

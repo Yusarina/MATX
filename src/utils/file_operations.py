@@ -1,38 +1,16 @@
-import os
-import sys
-import gi
-gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gio
+import wx
 
 def get_file_path(action, initial_dir=None):
-    dialog = Gtk.FileChooserNative.new(
-        "Open File" if action == 'open' else "Save File",
-        None,
-        Gtk.FileChooserAction.OPEN if action == 'open' else Gtk.FileChooserAction.SAVE,
-        "_Open" if action == 'open' else "_Save",
-        "_Cancel"
-    )
-    dialog.set_modal(True)
+    style = wx.FD_OPEN if action == 'open' else wx.FD_SAVE
+    dialog = wx.FileDialog(None, "Open File" if action == 'open' else "Save File",
+                           defaultDir=initial_dir or wx.GetHomeDir(),
+                           style=style)
     
-    if initial_dir:
-        dialog.set_current_folder(Gio.File.new_for_path(initial_dir))
-    
-    filter_text = Gtk.FileFilter()
-    filter_text.set_name("Text files")
-    filter_text.add_mime_type("text/plain")
-    dialog.add_filter(filter_text)
-    
-    filter_any = Gtk.FileFilter()
-    filter_any.set_name("Any files")
-    filter_any.add_pattern("*")
-    dialog.add_filter(filter_any)
-    
-    response = dialog.run()
-    if response == Gtk.ResponseType.ACCEPT:
-        file_path = dialog.get_file().get_path()
-        dialog.destroy()
+    if dialog.ShowModal() == wx.ID_OK:
+        file_path = dialog.GetPath()
+        dialog.Destroy()
         return file_path
-    dialog.destroy()
+    dialog.Destroy()
     return None
 
 def read_file(file_path):
