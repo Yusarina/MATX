@@ -10,6 +10,15 @@ class Editor:
         self.app.SetTopWindow(self.ui)
         print("wx.App initialized")
 
+        # Add menu items for find and replace
+        edit_menu = wx.Menu()
+        edit_menu.Append(wx.ID_FIND, "&Find\tCtrl+F")
+        edit_menu.Append(wx.ID_REPLACE, "&Replace\tCtrl+H")
+        
+        menu_bar = wx.MenuBar()
+        menu_bar.Append(edit_menu, "&Edit")
+        self.ui.SetMenuBar(menu_bar)
+
     def new_file(self):
         print("Creating new file")
         wx.CallAfter(self.ui.add_tab, "Untitled", "")
@@ -36,6 +45,14 @@ class Editor:
     def redo(self):
         print("Redoing last undone action")
         self.ui.on_redo(None)
+
+    def find(self):
+        print("Finding text")
+        self.ui.on_find(None)
+
+    def replace(self):
+        print("Replacing text")
+        self.ui.on_replace(None)
 
     def run(self):
         print("Running editor")
