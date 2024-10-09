@@ -8,7 +8,7 @@ class WXUI(wx.Frame):
     UNDO_CHUNK_SIZE = 12
 
     def __init__(self, editor):
-        super().__init__(parent=None, title="MATX Editor")
+        super().__init__(parent=None, title="MATX Editor", style=wx.DEFAULT_FRAME_STYLE)
         self.editor = editor
         self.SetSize(800, 600)
         self.undo_stack = []
@@ -16,58 +16,107 @@ class WXUI(wx.Frame):
         self.current_chunk = ""
         self.current_chunk_start = 0
         
-        # Create main panel and sizer
         panel = wx.Panel(self)
         sizer = wx.BoxSizer(wx.VERTICAL)
 
-        # Create toolbar
-        toolbar = wx.ToolBar(panel)
-        new_tool = toolbar.AddTool(wx.ID_NEW, "New", wx.ArtProvider.GetBitmap(wx.ART_NEW))
-        open_tool = toolbar.AddTool(wx.ID_OPEN, "Open", wx.ArtProvider.GetBitmap(wx.ART_FILE_OPEN))
-        save_tool = toolbar.AddTool(wx.ID_SAVE, "Save", wx.ArtProvider.GetBitmap(wx.ART_FILE_SAVE))
+        toolbar = wx.ToolBar(panel, style=wx.TB_FLAT | wx.TB_HORIZONTAL)
+        toolbar.SetBackgroundColour(wx.Colour(45, 45, 45))
+
+        icon_path = os.path.join(os.path.dirname(__file__), "icons")
+        icon_size = (24, 24)
+
+        new_bmp = wx.Bitmap(os.path.join(icon_path, "new.png"))
+        new_bmp = new_bmp.ConvertToImage().Scale(*icon_size).ConvertToBitmap()
+        new_tool = toolbar.AddTool(wx.ID_NEW, "New", new_bmp)
+
+        open_bmp = wx.Bitmap(os.path.join(icon_path, "open.png"))
+        open_bmp = open_bmp.ConvertToImage().Scale(*icon_size).ConvertToBitmap()
+        open_tool = toolbar.AddTool(wx.ID_OPEN, "Open", open_bmp)
+
+        save_bmp = wx.Bitmap(os.path.join(icon_path, "save.png"))
+        save_bmp = save_bmp.ConvertToImage().Scale(*icon_size).ConvertToBitmap()
+        save_tool = toolbar.AddTool(wx.ID_SAVE, "Save", save_bmp)
+
         toolbar.AddSeparator()
-        undo_tool = toolbar.AddTool(wx.ID_UNDO, "Undo", wx.ArtProvider.GetBitmap(wx.ART_UNDO))
-        redo_tool = toolbar.AddTool(wx.ID_REDO, "Redo", wx.ArtProvider.GetBitmap(wx.ART_REDO))
+
+        undo_bmp = wx.Bitmap(os.path.join(icon_path, "undo.png"))
+        undo_bmp = undo_bmp.ConvertToImage().Scale(*icon_size).ConvertToBitmap()
+        undo_tool = toolbar.AddTool(wx.ID_UNDO, "Undo", undo_bmp)
+
+        redo_bmp = wx.Bitmap(os.path.join(icon_path, "redo.png"))
+        redo_bmp = redo_bmp.ConvertToImage().Scale(*icon_size).ConvertToBitmap()
+        redo_tool = toolbar.AddTool(wx.ID_REDO, "Redo", redo_bmp)
+
         toolbar.Realize()
         sizer.Add(toolbar, 0, wx.EXPAND)
 
-        # Create notebook for tabs
         self.notebook = wx.Notebook(panel)
-        sizer.Add(self.notebook, 1, wx.EXPAND)
+        sizer.Add(self.notebook, 1, wx.EXPAND | wx.ALL, 5)
 
         panel.SetSizer(sizer)
 
-        # Bind events
         self.Bind(wx.EVT_TOOL, self.on_new, new_tool)
         self.Bind(wx.EVT_TOOL, self.on_open, open_tool)
         self.Bind(wx.EVT_TOOL, self.on_save, save_tool)
         self.Bind(wx.EVT_TOOL, self.on_undo, undo_tool)
         self.Bind(wx.EVT_TOOL, self.on_redo, redo_tool)
 
+        self.apply_dark_theme()
+
+    def apply_dark_theme(self):
+        dark_bg = wx.Colour(30, 30, 30)
+        dark_fg = wx.Colour(200, 200, 200)
+        
+        self.SetBackgroundColour(dark_bg)
+        self.SetForegroundColour(dark_fg)
+        
+        for child in self.GetChildren():
+            child.SetBackgroundColour(dark_bg)
+            child.SetForegroundColour(dark_fg)
+        
+        self.notebook.Bind(wx.EVT_PAINT, self.on_notebook_paint)
+
+    def on_notebook_paint(self, event):
+        dc = wx.PaintDC(self.notebook)
+        dc.SetBackground(wx.Brush(wx.Colour(30, 30, 30)))
+        dc.Clear()
+        
+        font = dc.GetFont()
+        font.SetWeight(wx.FONTWEIGHT_BOLD)
+        dc.SetFont(font)
+        dc.SetTextForeground(wx.Colour(200, 200, 200))
+        
+        for i in range(self.notebook.GetPageCount()):
+            rect = self.notebook.GetPageRect(i)
+            if i == self.notebook.GetSelection():
+                dc.SetBrush(wx.Brush(wx.Colour(60, 60, 60)))
+            else:
+                dc.SetBrush(wx.Brush(wx.Colour(45, 45, 45)))
+            dc.SetPen(wx.Pen(wx.Colour(70, 70, 70)))
+            dc.DrawRectangle(rect)
+            dc.DrawText(self.notebook.GetPageText(i), rect.x + 5, rect.y + 5)
+        
+        event.Skip()
+
     def add_tab(self, file_path, content):
         text_ctrl = stc.StyledTextCtrl(self.notebook)
         text_ctrl.SetText(content)
         
-        # Set a darker background color
-        text_ctrl.SetBackgroundColour(wx.Colour(30, 30, 30))  # Dark gray
-
-        # Set the lexer and styles
-        text_ctrl.SetLexer(stc.STC_LEX_PYTHON)
-        text_ctrl.StyleSetSpec(stc.STC_STYLE_DEFAULT, "face:Courier New,size:10,back:#1E1E1E,fore:#FFFFFF")
-        text_ctrl.StyleClearAll()
+        dark_bg = wx.Colour(30, 30, 30)
+        light_text = wx.Colour(212, 212, 212)
         
-        # Set margin for line numbers
+        text_ctrl.StyleSetSpec(stc.STC_STYLE_DEFAULT, f"face:Consolas,size:10,back:{dark_bg.GetAsString(wx.C2S_HTML_SYNTAX)},fore:{light_text.GetAsString(wx.C2S_HTML_SYNTAX)}")
+        text_ctrl.StyleClearAll()
+        text_ctrl.SetLexer(stc.STC_LEX_PYTHON)
+        
         text_ctrl.SetMarginType(1, stc.STC_MARGIN_NUMBER)
         text_ctrl.SetMarginWidth(1, 30)
+        text_ctrl.StyleSetSpec(stc.STC_STYLE_LINENUMBER, f"back:#252526,fore:#858585")
 
-        # Enable undo functionality
         text_ctrl.SetUndoCollection(True)
         text_ctrl.EmptyUndoBuffer()
 
-        # Bind Ctrl+Z and Ctrl+Y to custom undo/redo
         text_ctrl.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
-
-        # Bind the text change event
         text_ctrl.Bind(wx.stc.EVT_STC_MODIFIED, self.on_text_modified)
 
         self.notebook.AddPage(text_ctrl, os.path.basename(file_path))
@@ -149,7 +198,6 @@ class WXUI(wx.Frame):
             
             self.undo_stack.append(action)
             print(f"Debug: Redoing action: {action}")
-
 
     def on_key_down(self, event):
         if event.GetKeyCode() == ord('Z') and event.ControlDown():
