@@ -3,13 +3,19 @@
 A cross-platform text editor implemented in Python, supporting both Windows and Linux. This is in very early development is mainly a learning expiereince for me. 
 
 ## Features
+#### Not That exiting but here there are!
 - Create new files
 - Open existing files
 - Save files
 - Native UI for Windows and Linux using wxPython
-- Syntax highlighting
+- Syntax highlighting for multiple languages (Python, C++, HTML, CSS)
 - Multiple tabs support
 - Undo and Redo functionality
+- Find and Replace functionality
+- Status bar showing line and column numbers, file encoding, and current language
+- Toolbar with icons for common actions (New, Open, Save, Undo, Redo)
+- Keyboard shortcuts for common actions (e.g., Ctrl+Z for Undo, Ctrl+Y for Redo)
+- File-specific syntax highlighting based on file extension
 
 ## Requirements
 
